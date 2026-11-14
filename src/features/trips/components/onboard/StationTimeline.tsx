@@ -10,6 +10,10 @@ interface StationTimelineProps {
   currentStopIndex: number;
   boardedStopIndex?: number;
   lineColor?: string;
+  /** Textul de lângă „Stația următoare” (ex. „în 3 min”); implicit cel demonstrativ. */
+  nextEtaText?: string;
+  /** Nota de lângă „Urcat aici”; `null` = fără notă. */
+  boardedNote?: string | null;
 }
 
 /** "3:10 PM" (mock data) → "15:10": the app shows 24-hour times everywhere. */
@@ -22,7 +26,14 @@ function to24h(raw: string): string {
   return `${String(h).padStart(2, '0')}:${m[2]}`;
 }
 
-export function StationTimeline({ stops, currentStopIndex, boardedStopIndex = -1, lineColor }: StationTimelineProps) {
+export function StationTimeline({
+  stops,
+  currentStopIndex,
+  boardedStopIndex = -1,
+  lineColor,
+  nextEtaText = t('ride.nextEta'),
+  boardedNote = t('home.tripScheduled'),
+}: StationTimelineProps) {
   const { colors } = useTheme();
   const rail = lineColor ?? colors.primary;
 
@@ -72,11 +83,11 @@ export function StationTimeline({ stops, currentStopIndex, boardedStopIndex = -1
 
               {isNext ? (
                 <Text style={[tlStyles.statusText, { color: colors.text }]}>
-                  {t('ride.nextStop')} · {t('ride.nextEta')}
+                  {t('ride.nextStop')} · {nextEtaText}
                 </Text>
               ) : isBoarded ? (
                 <Text style={[tlStyles.statusText, { color: colors.textMuted }]}>
-                  {t('ride.boardedHere')} · {t('home.tripScheduled')}
+                  {boardedNote ? `${t('ride.boardedHere')} · ${boardedNote}` : t('ride.boardedHere')}
                 </Text>
               ) : null}
 

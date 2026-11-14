@@ -14,6 +14,7 @@ import {
   type Station,
 } from '../../map';
 import { useWalletItems } from '../../wallet';
+import { useBoardLines } from '../stores/boardLines';
 import type { SheetSnapIndex, SheetViewMode } from '../components/map/HomeBottomSheet';
 
 /** Starea și acțiunile ecranului Explorează (hartă + panou + planner); vizualul e în `HomeScreenView`. */
@@ -100,12 +101,15 @@ export function useHomeScreen() {
     active: sheetMode === 'planner',
   });
 
+  // Stație aleasă: vehiculele care vin spre ea (`useLiveMap`), doar pe liniile bifate în panou, dacă sunt.
+  const boardLines = useBoardLines((s) => s.lines);
+  const stationMarkers = boardLines.length > 0 ? live.markers.filter((m) => boardLines.includes(m.bus.line)) : live.markers;
   const markers =
     mapMode === 'vehicles'
       ? live.allMarkers
       : mapMode === 'favorites'
         ? (live.tracked ? [live.tracked] : [])
-        : live.markers;
+        : stationMarkers;
 
   function handleMode(next: MapMode): void {
     setMapMode(next);

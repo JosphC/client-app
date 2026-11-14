@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, useWindowDimensions, type PanResponderInstance } from 'react-native';
 import type { SheetSnapIndex } from '../components/map/HomeBottomSheet';
 
-const PEEK_HEIGHT = 205;
+// Panoul strâns arată doar mânerul, numele stației și butoanele (Directions / Save / Share / Report), ca în Google Maps;
+// lista de linii și sosiri apare când tragi panoul în sus.
+const PEEK_HEIGHT = 128;
 
 interface SheetDrag {
   snapIndex: SheetSnapIndex;

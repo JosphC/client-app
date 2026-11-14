@@ -8,6 +8,7 @@ import { useTheme } from '../../../../core/theme/useTheme';
 import { BottomSheet, EmptyState } from '../../../../ui';
 import { useStopArrivals, type StopArrivalItem } from '../../hooks/useStopArrivals';
 import { useLiveMapReports } from '../../hooks/useLiveMapReports';
+import { useBoardLines } from '../../stores/boardLines';
 import { useFavoriteStations } from '../../stores/favoriteStations';
 import { ActionChipRow } from './ActionChipRow';
 import { BoardHeader } from './BoardHeader';
@@ -51,6 +52,9 @@ export function ArrivalsBoard({ station, coords, onSelectStation, onDirections, 
   useEffect(() => {
     setLimit(PAGE);
   }, [station.id]);
+  // Liniile bifate aici filtrează și vehiculele de pe hartă; la închiderea panoului harta arată iar toate liniile.
+  useEffect(() => useBoardLines.getState().setLines(lineFilter), [lineFilter]);
+  useEffect(() => () => useBoardLines.getState().setLines([]), []);
 
   const agoSec = updatedAtMs > 0 ? Math.max(0, Math.floor((Date.now() - updatedAtMs) / 1000)) : 0;
 

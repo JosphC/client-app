@@ -1,6 +1,6 @@
 export { BusListFallback } from './components/map/BusListFallback';
 export { BusPopup } from './components/overlays/BusPopup';
-export { estimateArrivals, etaToStationMin, haversineKm, nearestStation, CITY_CENTER } from './arrivals';
+export { approachingAt, estimateArrivals, etaToStationMin, haversineKm, nearestStation, CITY_CENTER } from './arrivals';
 export type { Arrival, LatLng } from './arrivals';
 export { detectDelays } from './delays';
 export type { DelayCause, DelayInfo } from './delays';

@@ -3,10 +3,19 @@ import { fontWeights, spacing } from '../../../../core/theme';
 
 /** Same surfaces as Activity and Wallet: no borders, 24 radius, sentence-case labels. */
 export const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: 54, gap: spacing.md },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  root: { flex: 1 },
+  dragArea: { gap: spacing.md },
+  // Mâner evidențiat: mai lat, mai gros și în culoarea textului secundar (nu a bordurii), cu zonă de atingere generoasă.
+  handleHit: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: spacing.xs },
+  handle: { width: 56, height: 6, borderRadius: 999, opacity: 0.6 },
   title: { fontSize: 24, fontWeight: fontWeights.bold, letterSpacing: -0.4 },
-  closeBtn: { padding: spacing.xs },
   summaryCard: { borderRadius: 24, padding: 20, gap: 2 },
   monthTitle: { fontSize: 12.5, letterSpacing: 0.2 },
   total: { fontSize: 28, fontWeight: fontWeights.bold, letterSpacing: -0.5, marginTop: 2 },
@@ -15,7 +24,13 @@ export const styles = StyleSheet.create({
   // Shrink-wraps short lists (no tall empty card), scrolls when the month is long.
   listCard: { flexShrink: 1, borderRadius: 24, overflow: 'hidden' },
   separator: { height: StyleSheet.hairlineWidth, marginLeft: 88 },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 18 },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
   itemMain: { flex: 1, gap: 3, marginLeft: 2 },
   routeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   shrink: { flexShrink: 1 },
@@ -23,6 +38,13 @@ export const styles = StyleSheet.create({
   itemMeta: { fontSize: 12.5 },
   itemPrice: { fontSize: 15, fontWeight: fontWeights.bold },
   actions: { marginTop: 'auto', paddingTop: spacing.xs },
-  downloadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, height: 50, borderRadius: 999 },
+  downloadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    height: 50,
+    borderRadius: 999,
+  },
   downloadText: { fontSize: 15, fontWeight: fontWeights.semiBold },
 });

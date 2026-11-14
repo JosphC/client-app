@@ -4,9 +4,9 @@ import * as Location from 'expo-location';
 import { useCallback, useMemo, useState } from 'react';
 import type { Bus, BusPosition } from '../../../services/api/schemas/bus';
 import { getRepositories } from '../../../services/providers';
-import { estimateArrivals, haversineKm, nearestStation, CITY_CENTER, type Arrival } from '../arrivals';
+import { approachingAt, estimateArrivals, haversineKm, nearestStation, CITY_CENTER, type Arrival } from '../arrivals';
 import { detectDelays, type DelayInfo } from '../delays';
-import { loadStations, trolleybusesAt, type Station } from '../stations';
+import { loadStations, type Station } from '../stations';
 
 const repos = getRepositories();
 /** STPT publishes fresh positions ~every 20s; poll slower to stay clear of slow cycles. */
@@ -77,11 +77,11 @@ export function useLiveMap() {
   const selected = markers.find((m) => m.bus.id === selectedId) ?? null;
   const tracked = markers.find((m) => m.bus.id === trackedId) ?? null;
   // Google-Maps-style focus: no station/line -> empty map; a picked line shows
-  // only that line's vehicles; station alone narrows to its trolleybuses.
+  // only that line's vehicles; a station shows every vehicle on its way to it.
   const visible = line
     ? markers.filter((m) => m.bus.line === line)
     : station
-      ? trolleybusesAt(markers, station)
+      ? approachingAt(markers, station)
       : [];
   const arrivalStation = useMemo(() => station ?? nearestStation(coords), [station, coords]);
   const arrivals: Arrival[] = useMemo(() => estimateArrivals(arrivalStation, markers), [arrivalStation, markers]);

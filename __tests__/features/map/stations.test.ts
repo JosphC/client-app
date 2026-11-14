@@ -1,10 +1,10 @@
-import { loadStations, searchStations, trolleybusesAt, type Station } from '../../../src/features/map';
+import { approachingAt, loadStations, searchStations, trolleybusesAt, type Station } from '../../../src/features/map';
 import type { BusMarker } from '../../../src/features/map';
 
-function marker(line: string): BusMarker {
+function marker(line: string, lat = 45.75, lng = 21.22, id = `${line}-1`): BusMarker {
   return {
-    bus: { id: `${line}-1`, line, destination: 'X', crowd: 1, delayMin: 0, delayReason: null },
-    position: { busId: `${line}-1`, lat: 45.75, lng: 21.22, nextStop: 'S', arrivesInMin: 0, updatedAt: '2026-10-04T09:00:00Z' },
+    bus: { id, line, destination: 'X', crowd: 1, delayMin: 0, delayReason: null },
+    position: { busId: id, lat, lng, nextStop: 'S', arrivesInMin: 0, updatedAt: '2026-10-04T09:00:00Z' },
   };
 }
 
@@ -35,5 +35,19 @@ describe('stations', () => {
     const markers = [marker('11'), marker('14'), marker('2'), marker('33')];
     const filtered = trolleybusesAt(markers, station);
     expect(filtered.map((m) => m.bus.line)).toEqual(['11']);
+  });
+
+  it('approachingAt: every mode on the station lines, nearest first (Google Maps style)', () => {
+    // Autobuzul 2 (nu troleibuz) e acum inclus; 33 nu oprește aici; cel la stație vine primul.
+    const far = marker('11', 45.76, 21.23, 'far');
+    const atStop = marker('2', 45.75, 21.22, 'at-stop');
+    const shown = approachingAt([far, marker('33'), atStop], station);
+    expect(shown.map((m) => m.bus.id)).toEqual(['at-stop', 'far']);
+  });
+
+  it('approachingAt: no position or too far (over 90 min) is not shown', () => {
+    const noPos: BusMarker = { ...marker('11', 45.75, 21.22, 'no-pos'), position: undefined };
+    const veryFar = marker('2', 46.75, 22.22, 'very-far');
+    expect(approachingAt([noPos, veryFar], station)).toEqual([]);
   });
 });

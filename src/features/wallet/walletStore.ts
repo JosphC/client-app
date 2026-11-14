@@ -13,6 +13,9 @@ interface WalletState {
   /** Set by the boarding prompt when nothing can pay: the Wallet opens "add a method". Not persisted. */
   addMethodRequested: boolean;
   setAddMethodRequested: (requested: boolean) => void;
+  /** Setat după o plată reușită la urcare: Portofelul deschide singur biletul cu QR. Nepersistat. */
+  ticketRequested: boolean;
+  setTicketRequested: (requested: boolean) => void;
 }
 
 export const useWalletStore = create<WalletState>()(
@@ -33,6 +36,8 @@ export const useWalletStore = create<WalletState>()(
         })),
       addMethodRequested: false,
       setAddMethodRequested: (requested) => set({ addMethodRequested: requested }),
+      ticketRequested: false,
+      setTicketRequested: (requested) => set({ ticketRequested: requested }),
       renewPass: (id, days = 30) =>
         set((s) => ({
           items: s.items.map((item) => {

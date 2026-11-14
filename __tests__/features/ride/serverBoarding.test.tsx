@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { useServerBoarding } from '../../../src/features/ride/hooks/useServerBoarding';
 import { useRideStore } from '../../../src/features/ride/rideStore';
+import { resumeAfterLogin, syncRide } from '../../../src/features/ride/serverRide';
 import { useWalletStore } from '../../../src/features/wallet/walletStore';
 import { ApiError } from '../../../src/services/api/http';
 import * as rideRepo from '../../../src/services/repositories/real/rideRepo';
@@ -33,9 +34,15 @@ describe('plata prin server', () => {
   it('confirm trimite pasagerii și sursa, apoi activează biletul', async () => {
     repo.confirmRide.mockResolvedValue(ride as never);
     const { result } = renderHook(() => useServerBoarding(), { wrapper });
-    await act(() => result.current.confirm(1));
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.confirm(1);
+    });
     expect(repo.confirmRide).toHaveBeenCalledWith('s1', { passengers: 1, sourceId: 'card-1', busId: undefined });
     expect(useRideStore.getState().activeRide?.chargeId).toBe('c1');
+    // Plata reușită întoarce `true`: promptul cere Portofelului să deschidă biletul cu QR.
+    expect(ok).toBe(true);
+    expect(useRideStore.getState().activeTicket?.qrToken).toBe('a.b.c');
   });
 
   it('abonament neacceptat (NO_PAYMENT_METHOD) → reîncearcă cu cardul', async () => {
@@ -58,12 +65,37 @@ describe('plata prin server', () => {
     expect(useRideStore.getState().status).toBe('idle');
   });
 
+  it('ACCOUNT_REQUIRED → după login promptul reapare pentru aceeași sesiune', async () => {
+    repo.confirmRide.mockRejectedValue(new ApiError(403, 'ACCOUNT_REQUIRED', 'x'));
+    const { result } = renderHook(() => useServerBoarding(), { wrapper });
+    await act(() => result.current.confirm(1));
+    const awaiting = { ...ride, status: 'awaiting_confirmation', pollAfterMs: 3000, charge: null } as never;
+    syncRide(awaiting);
+    expect(useRideStore.getState().status).toBe('idle');
+    resumeAfterLogin();
+    syncRide(awaiting);
+    expect(useRideStore.getState().status).toBe('detected');
+  });
+
+  it('card care nu e în contul de pe server (NOT_FOUND) → eroare în prompt', async () => {
+    repo.confirmRide.mockRejectedValue(new ApiError(404, 'NOT_FOUND', 'x'));
+    const { result } = renderHook(() => useServerBoarding(), { wrapper });
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.confirm(1);
+    });
+    expect(ok).toBe(false);
+    expect(useRideStore.getState().status).toBe('detected');
+    expect(useRideStore.getState().paymentError).toBeTruthy();
+  });
+
   it('PAYMENT_DECLINED → promptul rămâne deschis pentru reîncercare', async () => {
     repo.confirmRide.mockRejectedValue(new ApiError(402, 'PAYMENT_DECLINED', 'x', 'card_declined'));
     const { result } = renderHook(() => useServerBoarding(), { wrapper });
     await act(() => result.current.confirm(1));
     expect(useRideStore.getState().status).toBe('detected');
-    expect(useRideStore.getState().toastMessage).toBeTruthy();
+    // Eroarea apare în prompt: un toast pe hartă ar fi ascuns sub el.
+    expect(useRideStore.getState().paymentError).toBeTruthy();
   });
 
   it('decline închide local și anunță serverul', async () => {

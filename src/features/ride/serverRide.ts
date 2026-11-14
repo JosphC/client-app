@@ -12,6 +12,14 @@ const TICKET_TTL_MS = 60 * 60 * 1000;
 const dismissed = new Set<string>();
 export const markSessionDismissed = (sessionId: string): void => void dismissed.add(sessionId);
 
+/**
+ * Sesiuni oprite doar până la login (serverul a cerut cont la plată): cât ești pe ecranul de login promptul nu
+ * se redeschide peste el, iar după login (`resumeAfterLogin`) reapare, ca să poți plăti aceeași cursă.
+ */
+const awaitingLogin = new Set<string>();
+export const deferUntilLogin = (sessionId: string): void => void awaitingLogin.add(sessionId);
+export const resumeAfterLogin = (): void => awaitingLogin.clear();
+
 function modeLabel(line: string): string {
   const mode = findRoute(line)?.mode;
   if (mode === 'tram') return t('common.modeTram');
@@ -43,6 +51,7 @@ export function applyConfirmed(ride: Ride, passengersHint?: number): void {
   const { charge } = ride;
   if (!charge) return;
   const store = useRideStore.getState();
+  store.setRideProgress(ride.progress);
   if (store.activeRide?.chargeId === charge.id && store.activeRide.qrToken === charge.qrToken) return;
   const claims = ticketClaims(charge.qrToken);
   const passengers = passengersHint ?? claims.pax ?? 1;
@@ -68,14 +77,14 @@ export function syncRide(ride: Ride): void {
   switch (ride.status) {
     case 'awaiting_confirmation':
     case 'payment_failed': {
-      if (!ride.sessionId || dismissed.has(ride.sessionId)) return;
+      if (!ride.sessionId || dismissed.has(ride.sessionId) || awaitingLogin.has(ride.sessionId)) return;
       const first = ride.vehicle ?? ride.candidates[0];
       if (!first) return;
       if (store.serverRide?.sessionId !== ride.sessionId) {
         store.setServerRide({ sessionId: ride.sessionId, candidates: ride.candidates, busId: ride.vehicle?.busId ?? null });
         store.detectVehicle(toDetectedVehicle(first.line, first.busId, ride.vehicle?.destination));
       }
-      if (ride.status === 'payment_failed') store.setToastMessage(t('ride.paymentFailed'));
+      if (ride.status === 'payment_failed') store.setPaymentError(t('ride.paymentFailed'));
       return;
     }
     case 'confirmed':

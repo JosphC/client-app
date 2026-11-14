@@ -4,6 +4,7 @@ import { t } from '../../../core/i18n';
 import { Screen, ScreenHeader } from '../../../ui';
 import { ActiveRideCard } from './ActiveRideCard';
 import { CardStack } from './cards/CardStack';
+import { WalletEmptyCard } from './cards/WalletEmptyCard';
 import { WalletManageCard } from './actions/WalletManageCard';
 import { WalletModals } from './actions/WalletModals';
 import { useCurrentTicket } from '../hooks/useCurrentTicket';
@@ -41,6 +42,13 @@ export function WalletScreen() {
   const passItem = (items.find((i) => i.kind === 'pass') ?? null) as Extract<WalletItem, { kind: 'pass' }> | null;
 
   const { currentTicket, remainingMin } = useCurrentTicket();
+  // După o plată reușită la urcare, biletul cu QR se deschide singur.
+  const ticketRequested = useWalletStore((s) => s.ticketRequested);
+  useEffect(() => {
+    if (!ticketRequested || !currentTicket) return;
+    useWalletStore.getState().setTicketRequested(false);
+    setInspectorOpen(true);
+  }, [ticketRequested, currentTicket]);
 
   if (isLoading) return <Text>{t('common.loading')}</Text>;
 
@@ -72,7 +80,7 @@ export function WalletScreen() {
     <Screen scroll>
       <ScreenHeader title={t('wallet.title')} actionLabel={t('wallet.add')} onAction={() => setSheet('pick')} />
       {items.length === 0 ? (
-        <Text>{t('wallet.emptyWallet')}</Text>
+        <WalletEmptyCard onAdd={() => setSheet('pick')} />
       ) : (
         <CardStack
           items={items}

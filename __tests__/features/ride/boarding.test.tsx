@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { BoardingPromptModal } from '../../../src/features/ride/components/BoardingPromptModal';
 import { useRideStore } from '../../../src/features/ride/rideStore';
 import { useWalletStore } from '../../../src/features/wallet/walletStore';
@@ -186,5 +186,23 @@ describe('boarding pays automatically with the saved method (no card details at 
     expect(useWalletStore.getState().addMethodRequested).toBe(true);
     expect(mockPush).toHaveBeenCalledWith('/(tabs)/wallet');
     expect(useRideStore.getState().status).not.toBe('detected');
+  });
+
+  it('paid: opens the Wallet and asks it to show the QR ticket', async () => {
+    useWalletStore.setState({ ticketRequested: false });
+    useRideStore.getState().detectVehicle(vehicle);
+    const { getByTestId } = renderModal();
+    fireEvent.press(getByTestId('btn-confirm-boarding'));
+    await waitFor(() => expect(useWalletStore.getState().ticketRequested).toBe(true));
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/wallet');
+    expect(useRideStore.getState().activeTicket).not.toBeNull();
+  });
+
+  it('payment error is shown inside the prompt, which stays open', () => {
+    useRideStore.getState().detectVehicle(vehicle);
+    useRideStore.getState().setPaymentError('Plata nu a putut fi făcută.');
+    const { getByTestId } = renderModal();
+    expect(getByTestId('boarding-payment-error').props.children).toBe('Plata nu a putut fi făcută.');
+    expect(getByTestId('btn-confirm-boarding')).toBeTruthy();
   });
 });

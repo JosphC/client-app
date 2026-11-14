@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { formatTransitTime } from '../../core/utils/timezone';
+import type { RideProgress } from '../../services/api/schemas/ride';
 
 export interface DetectedVehicle {
   line: string;
@@ -63,6 +64,10 @@ interface RideState {
   activeTicket: ActiveTicketState | null;
   toastMessage: string | null;
   serverRide: ServerRideState | null;
+  /** Eroarea ultimei încercări de plată, afișată ÎN promptul de plată (toast-ul de pe hartă ar fi ascuns sub el). */
+  paymentError: string | null;
+  /** Poziția autobuzului și stația următoare a cursei plătite (de la server, la ~5 s); `null` în mock. */
+  rideProgress: RideProgress | null;
 
   setServerRide: (ride: ServerRideState | null) => void;
   detectVehicle: (vehicle: DetectedVehicle) => void;
@@ -74,6 +79,8 @@ interface RideState {
   startTicket: (ticket: ActiveTicketState) => void;
   applyTransfer: (vehicle: DetectedVehicle, nowMs?: number) => number;
   setToastMessage: (msg: string | null) => void;
+  setPaymentError: (msg: string | null) => void;
+  setRideProgress: (progress: RideProgress | null) => void;
   clearRide: (nowMs?: number) => void;
   resetAll: () => void;
 }
@@ -86,11 +93,13 @@ export const useRideStore = create<RideState>()((set, get) => ({
   activeTicket: null,
   toastMessage: null,
   serverRide: null,
+  paymentError: null,
+  rideProgress: null,
 
   setServerRide: (serverRide) => set({ serverRide }),
 
   detectVehicle: (vehicle) =>
-    set({ detectedVehicle: vehicle, status: 'detected', passengerCount: 1 }),
+    set({ detectedVehicle: vehicle, status: 'detected', passengerCount: 1, paymentError: null }),
 
   setPassengerCount: (count) =>
     set({ passengerCount: Math.min(10, Math.max(1, count)) }),
@@ -102,10 +111,10 @@ export const useRideStore = create<RideState>()((set, get) => ({
     set((s) => ({ passengerCount: Math.max(1, s.passengerCount - 1) })),
 
   dismissDetection: () =>
-    set({ status: 'idle', detectedVehicle: null, passengerCount: 1, serverRide: null }),
+    set({ status: 'idle', detectedVehicle: null, passengerCount: 1, serverRide: null, paymentError: null, rideProgress: null }),
 
   setActiveRide: (ride) =>
-    set({ activeRide: ride, status: 'active', detectedVehicle: null }),
+    set({ activeRide: ride, status: 'active', detectedVehicle: null, paymentError: null }),
 
   startTicket: (ticket) =>
     set({ activeTicket: ticket }),
@@ -140,13 +149,15 @@ export const useRideStore = create<RideState>()((set, get) => ({
   },
 
   setToastMessage: (msg) => set({ toastMessage: msg }),
+  setPaymentError: (msg) => set({ paymentError: msg }),
+  setRideProgress: (rideProgress) => set({ rideProgress }),
 
   clearRide: (nowMs = Date.now()) => {
     const { activeTicket } = get();
     const ticketStillValid = Boolean(activeTicket && activeTicket.expiresAtMs > nowMs);
-    set({ status: 'idle', activeRide: null, detectedVehicle: null, passengerCount: 1, activeTicket: ticketStillValid ? activeTicket : null });
+    set({ status: 'idle', activeRide: null, detectedVehicle: null, passengerCount: 1, activeTicket: ticketStillValid ? activeTicket : null, rideProgress: null });
   },
 
   resetAll: () =>
-    set({ status: 'idle', detectedVehicle: null, passengerCount: 1, activeRide: null, activeTicket: null, toastMessage: null, serverRide: null }),
+    set({ status: 'idle', detectedVehicle: null, passengerCount: 1, activeRide: null, activeTicket: null, toastMessage: null, serverRide: null, paymentError: null }),
 }));

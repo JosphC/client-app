@@ -91,20 +91,17 @@ export function useRideDetector() {
   );
 
   const confirmBoarding = useCallback(
-    async (overridePassengers?: number, nowMs = Date.now()) => {
+    async (overridePassengers?: number, nowMs = Date.now()): Promise<boolean> => {
       const vehicle = detectedVehicle ?? DEFAULT_MOCK_VEHICLE;
       const passengers = overridePassengers ?? passengerCount;
       // Serverul real: plata se face prin `POST /rides/{id}/confirm`, nu prin charge local.
-      if (!env.useMocks) {
-        await server.confirm(passengers);
-        return;
-      }
+      if (!env.useMocks) return server.confirm(passengers);
       let result: Awaited<ReturnType<typeof confirmRideCharge>>;
       try {
         result = await confirmRideCharge(vehicle.line, nowMs, passengers);
       } catch {
-        setToastMessage(t('ride.paymentFailed'));
-        return;
+        useRideStore.getState().setPaymentError(t('ride.paymentFailed'));
+        return false;
       }
       const startedAt = formatTransitTime(nowMs);
       const expiresAtMs = nowMs + 60 * 60 * 1000;
@@ -120,6 +117,7 @@ export function useRideDetector() {
       const fareStr = result.charge.amount === 0 ? t('ride.pass') : `${result.charge.amount.toFixed(2).replace('.', ',')} lei`;
       const passText = `${passengers} ${passengers === 1 ? t('ride.person') : t('ride.people')}`;
       setToastMessage(`${t('plan.line')} ${vehicle.line} · ${passText} · ${fareStr}`);
+      return true;
     },
     [confirmRideCharge, detectedVehicle, passengerCount, server, setActiveRide, setToastMessage, startTicket],
   );

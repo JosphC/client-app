@@ -7,23 +7,25 @@ import { confirmRide, declineRide } from '../../../services/repositories/real/ri
 import { NoPaymentSourceError, selectPaymentSource } from '../../wallet/paymentSource';
 import { useWalletStore } from '../../wallet/walletStore';
 import { useRideStore } from '../rideStore';
-import { applyConfirmed, markSessionDismissed } from '../serverRide';
+import { applyConfirmed, deferUntilLogin, markSessionDismissed } from '../serverRide';
 
 /** Plata și refuzul prin server (`confirm` / `decline`); înlocuiesc charge-ul local din modul mock. */
 export function useServerBoarding() {
   const router = useRouter();
   const client = useQueryClient();
 
+  /** `true` când plata a reușit și biletul cu QR e salvat; altfel eroarea apare în prompt (`paymentError`). */
   const confirm = useCallback(
-    async (passengers: number): Promise<void> => {
+    async (passengers: number): Promise<boolean> => {
       const store = useRideStore.getState();
       const ride = store.serverRide;
       const vehicle = store.detectedVehicle;
-      if (!ride || !vehicle) return;
+      if (!ride || !vehicle) return false;
       if (ride.candidates.length > 0 && ride.busId === null) {
-        store.setToastMessage(t('ride.chooseBus'));
-        return;
+        store.setPaymentError(t('ride.chooseBus'));
+        return false;
       }
+      store.setPaymentError(null);
       const { items, defaultSourceId } = useWalletStore.getState();
       const busId = ride.candidates.length > 0 ? (ride.busId ?? undefined) : undefined;
       const card = items.find((i) => i.kind === 'card' && i.id === defaultSourceId) ?? items.find((i) => i.kind === 'card');
@@ -40,9 +42,11 @@ export function useServerBoarding() {
         applyConfirmed(result, passengers);
         void client.invalidateQueries({ queryKey: ['wallet', 'charges'] });
         void client.invalidateQueries({ queryKey: ['ride', 'current'] });
+        return Boolean(useRideStore.getState().activeTicket?.qrToken);
       } catch (e) {
         if (e instanceof ApiError && e.code === 'ACCOUNT_REQUIRED') {
-          markSessionDismissed(ride.sessionId);
+          // Nu respingem cursa: după login promptul reapare pentru aceeași sesiune (`resumeAfterLogin`).
+          deferUntilLogin(ride.sessionId);
           store.dismissDetection();
           store.setToastMessage(t('ride.accountRequired'));
           router.push('/auth');
@@ -50,12 +54,17 @@ export function useServerBoarding() {
           store.dismissDetection();
           store.setToastMessage(t('ride.sessionExpired'));
         } else if (e instanceof NoPaymentSourceError || (e instanceof ApiError && e.code === 'NO_PAYMENT_METHOD')) {
-          store.setToastMessage(t('ride.noPaymentMethod'));
+          store.setPaymentError(t('ride.noPaymentMethod'));
         } else if (e instanceof ApiError && e.code === 'NETWORK') {
-          store.setToastMessage(t('ride.networkError'));
+          store.setPaymentError(t('ride.networkError'));
+        } else if (e instanceof ApiError && e.code === 'NOT_FOUND') {
+          // Cardul ales nu e în contul de pe server (ex. portofel rămas de la alt cont): reîncărcăm portofelul.
+          void client.invalidateQueries({ queryKey: ['wallet', 'items'] });
+          store.setPaymentError(t('ride.cardNotInAccount'));
         } else {
-          store.setToastMessage(t('ride.paymentFailed'));
+          store.setPaymentError(t('ride.paymentFailed'));
         }
+        return false;
       }
     },
     [client, router],

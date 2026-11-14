@@ -6,7 +6,7 @@ import { useTheme } from '../../../../core/theme';
 import { findRoute } from '../../../../services/repositories/gtfs/timetable';
 import { LineBadge } from '../../../../ui';
 import type { ActiveRideState } from '../../../ride';
-import { getLineStops, timeStopsFrom } from '../../data/lineStations';
+import { useOnboardView } from '../../hooks/useOnboardView';
 import { StationTimeline } from './StationTimeline';
 import { styles } from './onboardStyles';
 
@@ -19,28 +19,22 @@ export function LiveOnboardCard({ ride, initiallyExpanded = false }: LiveOnboard
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(initiallyExpanded);
   const [showPrev, setShowPrev] = useState(false);
+  const view = useOnboardView(ride);
   // Hooks first: an early return before them breaks the rules of hooks.
-  if (!ride) return null;
+  if (!ride || !view) return null;
 
   const line = ride.line;
   const destination = ride.destination;
-  const initialStation = ride.station;
   const route = findRoute(line);
   const routeColor = route?.color ?? colors.primary;
 
-  const lineStops = getLineStops(line);
-  const rawIdx = lineStops.findIndex((s) => s.name.toLowerCase().includes(initialStation.toLowerCase().slice(0, 5)));
-  const boardedStopIndex = rawIdx >= 0 ? rawIdx : 0;
-  const stops = timeStopsFrom(lineStops, boardedStopIndex, ride.startedAt);
-  const boardedStop = stops[boardedStopIndex] ?? stops[0];
-
-  const nextStopIndex = Math.min(stops.length - 1, boardedStopIndex + 1);
-  const nextStop = stops[nextStopIndex] ?? boardedStop;
-
-  const hasPrevStops = boardedStopIndex > 0;
-  const displayedStops = showPrev ? stops : stops.slice(boardedStopIndex);
-  const activeTimelineIdx = showPrev ? nextStopIndex : Math.min(displayedStops.length - 1, 1);
-  const activeBoardedIdx = showPrev ? boardedStopIndex : 0;
+  const { stops, boardedIndex, nextIndex } = view;
+  // Lista începe de la stația de urcare (sau de la cea dinaintea celei următoare); restul, la „Arată stațiile anterioare”.
+  let start = boardedIndex >= 0 ? boardedIndex : Math.max(0, nextIndex - 1);
+  if (nextIndex >= 0 && nextIndex < start) start = nextIndex; // traseu circular: următoarea e din nou la început
+  const hasPrevStops = start > 0;
+  const offset = showPrev ? 0 : start;
+  const displayedStops = stops.slice(offset);
 
   return (
     <View testID="live-onboard-card" style={[styles.card, { backgroundColor: colors.card }]}>
@@ -64,7 +58,7 @@ export function LiveOnboardCard({ ride, initiallyExpanded = false }: LiveOnboard
               <View style={[styles.liveDot, { backgroundColor: colors.success }]} />
               <Text style={[styles.stationText, { color: colors.textMuted }]}>{t('ride.onBoard')} · </Text>
               <Text numberOfLines={1} style={[styles.stationText, styles.fromText, { color: colors.textMuted }]}>
-                {t('ride.boardedFrom')} {boardedStop?.name ?? initialStation}
+                {t('ride.boardedFrom')} {view.boardedName}
               </Text>
             </View>
           </View>
@@ -76,10 +70,10 @@ export function LiveOnboardCard({ ride, initiallyExpanded = false }: LiveOnboard
           <View style={styles.textBlock}>
             <Text style={[styles.nextLabel, { color: colors.textMuted }]}>{t('ride.nextStop')}</Text>
             <Text numberOfLines={1} style={[styles.nextStopHeader, { color: colors.text }]}>
-              {nextStop.name}
+              {view.nextName ?? '—'}
             </Text>
           </View>
-          <Text style={[styles.nextEta, { color: colors.text }]}>{t('ride.nextEta')}</Text>
+          <Text style={[styles.nextEta, { color: colors.text }]}>{view.nextName ? view.nextEtaText : ''}</Text>
         </View>
       </Pressable>
 
@@ -102,9 +96,11 @@ export function LiveOnboardCard({ ride, initiallyExpanded = false }: LiveOnboard
 
           <StationTimeline
             stops={displayedStops}
-            currentStopIndex={activeTimelineIdx}
-            boardedStopIndex={activeBoardedIdx}
+            currentStopIndex={nextIndex >= 0 ? nextIndex - offset : -1}
+            boardedStopIndex={boardedIndex >= 0 ? boardedIndex - offset : -1}
             lineColor={routeColor}
+            nextEtaText={view.nextEtaText}
+            boardedNote={view.boardedNote}
           />
         </View>
       )}

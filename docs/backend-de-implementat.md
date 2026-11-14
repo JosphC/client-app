@@ -234,6 +234,62 @@ Cererea pentru observație:
 
 Aplicația va trimite o observație la ~5 secunde cât timp vede vehiculul. `nonce` vine din reclama BLE a ESP32-ului (de stabilit împreună cu firmware-ul).
 
+### 3.3.1 🔴 Progresul cursei: poziția autobuzului și stația următoare 📝
+
+**De ce:** cardul „La bord” din aplicație trebuie să arate stația următoare și minutele până la ea, calculate din poziția ESP32 (reală sau simulată). Acum aplicația nu poate citi poziția:
+
+- `GET /rides/current` trimite despre vehicul doar `busId`, `line` și `destination`;
+- `GET /buses/{id}/position` și `GET /buses/positions` cer `DISPLAY_TOKEN`, care e secret și **nu** poate fi pus în aplicație.
+
+Serverul are deja tot ce trebuie: telemetria ESP32 (`lat`, `lon`, `speed_kmh`, `fix_ok`, `sim`), traseul autobuzului (`Route.points`, unde punctele cu `name` sunt stațiile) și funcțiile `nearest_stop`, `ride_window` și `bus_positions`.
+
+**Ce trebuie adăugat:** un câmp nou, `progress`, în obiectul `Ride` (cel întors de `GET /rides/current` și de `POST /rides/{id}/confirm`, vezi `server-api.md` §2).
+
+```json
+{
+  "status": "confirmed",
+  "sessionId": "sess-123",
+  "vehicle": { "busId": 101, "line": "E2", "destination": "Elbromplast" },
+  "progress": {
+    "position": {
+      "lat": 45.7489,
+      "lng": 21.2087,
+      "speedKmh": 22.5,
+      "at": "2026-11-14T20:40:12Z",
+      "simulated": true
+    },
+    "boardedStop": "Piața Badea Cârțan",
+    "nextStop": { "index": 5, "name": "Piața Mărăști", "distanceM": 320, "etaSec": 55 },
+    "stops": [
+      { "name": "Piața Badea Cârțan", "lat": 45.7512, "lng": 21.2311, "passed": true },
+      { "name": "Piața Mărăști", "lat": 45.7563, "lng": 21.2290, "passed": false }
+    ]
+  }
+}
+```
+
+| Câmp | Cum se calculează |
+| --- | --- |
+| `progress` | prezent la `confirmed`; la celelalte statusuri, `null`. Doar pentru cursa utilizatorului care cere, nimic despre alte autobuze. |
+| `position` | ultima telemetrie a autobuzului cursei cu `fix_ok = true`, **mai nouă de 30 s**; altfel `null` (aplicația scrie „poziție indisponibilă”). Telemetria simulată (`sim = 1`) se ia în calcul doar în `TEST_MODE`, ca la `allow_sim`; atunci `simulated: true`. `lon` din telemetrie devine `lng`. |
+| `stops` | punctele cu nume din traseul autobuzului (`Route.points`), **în ordinea traseului**. `passed: true` pentru stațiile dinaintea poziției proiectate pe traseu. |
+| `boardedStop` | `nearest_stop` față de prima poziție a autobuzului din `ride_window`, ca la `from` din călătorii. |
+| `nextStop` | proiectezi `position` pe linia traseului (punctele în ordine): `nextStop` e prima stație de după segmentul pe care se află autobuzul. `index` e poziția ei în `stops`. |
+| `nextStop.distanceM` | distanța **de-a lungul traseului**, de la poziție până la stație, în metri, rotunjită. |
+| `nextStop.etaSec` | `distanceM / max(viteza, 15 km/h)`, în secunde, rotunjit. Pragul de 15 km/h evită ETA uriașe la semafor. |
+
+**Actualizare:**
+
+- La `confirmed`, `pollAfterMs` trece de la `15000` la `5000`, ca stația următoare să se schimbe la timp.
+- ETag-ul trebuie să se schimbe când se schimbă `progress`, altfel aplicația primește `304` și nu vede mișcarea. Propunere: la `confirmed`, ETag-ul include și `at` al ultimei poziții, de exemplu `"<sessionId>-v<version>-<at>"`.
+
+**Erori:** niciuna nouă. Fără traseu, fără stații sau fără telemetrie, câmpurile respective sunt `null` (`stops`: `[]`), iar restul răspunsului rămâne neschimbat.
+
+**De confirmat cu backend-ul:**
+
+1. Punctele din `Route.points` sunt în sensul de mers? Dacă un traseu are ambele sensuri sau e circular, serverul trebuie să aleagă sensul după ultimele 2–3 poziții. Altfel `nextStop` poate fi stația din spate.
+2. ESP32 simulat trimite telemetrie cu `fix_ok = true` și coordonate de-a lungul traseului E2?
+
 ### 3.4 🔴 Portofel
 
 | Metodă | Cale                               | Ce face                                                                                                                             |
@@ -521,6 +577,8 @@ Pentru P1, testăm împreună pe staging:
 - [ ] La coborâre, taxarea trece din `in_progress` în `completed` și primește `endedAt`.
 - [ ] `qrToken` se verifică corect cu cheia publică, fără internet.
 - [ ] Fără card și fără abonament: eroare `NO_PAYMENT_METHOD`.
+- [ ] Cu ESP32 simulat pe E2 și `TEST_MODE`: după confirmare, `GET /rides/current` are `progress.nextStop`, iar la fiecare ~5 s `nextStop.distanceM` scade și `nextStop` trece la stația următoare după ce autobuzul o depășește.
+- [ ] Telemetrie mai veche de 30 s: `progress.position` e `null`, restul cursei e neschimbat.
 
 ---
 
@@ -533,6 +591,7 @@ Ca să știi ce să aștepți de la mine:
 - reînnoirea abonamentului: trimit `productId` și `sourceId` (acum trimit doar `days`) și citesc prețurile din `/v1/passes/catalog`;
 - setările și profilul: le citesc și le salvez prin `/v1/me`;
 - cardul: conectez SDK-ul procesatorului ales, în locul procesatorului de test.
+- cardul „La bord”: citesc `progress` din `GET /rides/current` (stația următoare, minutele până la ea, stațiile trecute) în locul stațiilor demonstrative ([3.3.1](#331--progresul-cursei-poziția-autobuzului-și-stația-următoare-)).
 
 ---
 

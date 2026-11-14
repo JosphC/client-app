@@ -6,7 +6,7 @@ import type { Ride } from '../../../src/services/api/schemas/ride';
 const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const QR = `${b64({ alg: 'EdDSA' })}.${b64({ cid: 'c1', line: 'E2', pax: 2, exp: 1_900_000_000 })}.sig`;
 
-const base: Ride = { status: 'none', sessionId: null, updatedAt: '2026-11-14T10:00:00Z', pollAfterMs: null, vehicle: null, candidates: [], payment: null, charge: null };
+const base: Ride = { status: 'none', sessionId: null, updatedAt: '2026-11-14T10:00:00Z', pollAfterMs: null, vehicle: null, candidates: [], payment: null, charge: null, progress: null };
 const awaiting = (over: Partial<Ride> = {}): Ride => ({
   ...base, status: 'awaiting_confirmation', sessionId: 's1', pollAfterMs: 3000, vehicle: { busId: 101, line: 'E2', destination: 'Elbromplast' }, ...over,
 });

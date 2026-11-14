@@ -4,7 +4,11 @@ import { linkAccount, logout, signInAccount } from '../../services/api/auth';
 import { request } from '../../services/api/authedRequest';
 import { ApiError } from '../../services/api/http';
 import { readSession } from '../../services/api/session';
+import { queryClient } from '../../services/api/queryClient';
 import { resetRideCache } from '../../services/repositories/real/rideRepo';
+import { useRideStore } from '../ride/rideStore';
+import { resumeAfterLogin } from '../ride/serverRide';
+import { useWalletStore } from '../wallet/walletStore';
 import type { AuthUser } from './authService';
 
 const meSchema = z.object({
@@ -42,7 +46,7 @@ export async function signInWithGoogleOnServer(): Promise<AuthUser> {
     if (!(e instanceof ApiError) || e.code !== 'IDENTITY_IN_USE') throw e;
     await signInAccount('google', idToken);
   }
-  resetRideCache();
+  switchAccountData();
   const me = await request('/me', {}, meSchema);
   return { id: me.id, name: me.name ?? '', email: me.email ?? '' };
 }
@@ -51,4 +55,18 @@ export async function signInWithGoogleOnServer(): Promise<AuthUser> {
 export async function signOutOnServer(): Promise<void> {
   resetRideCache();
   if ((await readSession())?.tier === 'account') await logout();
+  switchAccountData();
+}
+
+/**
+ * Alt cont pe telefon: uită portofelul, biletul și cursa contului vechi și reîncarcă tot de la server.
+ * Fără asta promptul de plată ar oferi cardul contului vechi, pe care serverul nu-l găsește în contul nou.
+ * O cursă oprită pentru login (`deferUntilLogin`) reapare, ca s-o poți plăti imediat.
+ */
+function switchAccountData(): void {
+  resetRideCache();
+  useWalletStore.setState({ items: [], defaultSourceId: null });
+  useRideStore.getState().resetAll();
+  resumeAfterLogin();
+  void queryClient.resetQueries();
 }

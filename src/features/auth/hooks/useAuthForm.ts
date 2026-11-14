@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { I18nKey } from '../../../core/i18n';
 import { AuthError, type AuthErrorCode } from '../authService';
 import { useAuthStore } from '../authStore';
+import { usesServerAuth } from '../serverAuth';
 import { validateAuth, validateField, type AuthErrors, type AuthField, type AuthMode, type AuthValues } from '../validation';
 
 const ERROR_KEYS: Record<AuthErrorCode, I18nKey> = {
@@ -40,6 +41,12 @@ export function useAuthForm(onDone: () => void) {
     const found = validateAuth(mode, values);
     setErrors(found);
     if (Object.keys(found).length > 0 || busy) return;
+    // Serverul real are doar Google/Apple: formularul rămâne vizibil, dar nu te loghează doar pe telefon
+    // (serverul te-ar vedea tot anonim și ar refuza plata). Trimitem la butonul Google.
+    if (usesServerAuth()) {
+      setFormError('auth.useGoogle');
+      return;
+    }
     setBusy(true);
     try {
       if (mode === 'signIn') await signIn(values.email, values.password);

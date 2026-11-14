@@ -18,3 +18,4 @@ web-build/
 !src/assets/*.png
 !logo.png
 scratch/
+*.apk

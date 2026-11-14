@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { t } from '../../../core/i18n';
 import { fontWeights, useTheme } from '../../../core/theme';
 import { findRoute } from '../../../services/repositories/gtfs/timetable';
 import { LineBadge } from '../../../ui';
 import { useWalletStore } from '../../wallet/walletStore';
 import { useBoardingPayment } from '../hooks/useBoardingPayment';
+import { BoardingActions } from './BoardingActions';
 import { CandidatePicker } from './CandidatePicker';
 import { PassengerStepper } from './PassengerStepper';
 import { useRideDetector } from '../hooks/useRideDetector';
@@ -39,9 +40,13 @@ export function BoardingPromptModal() {
       ? t('ride.validate')
       : `${t('ride.pay')} ${payment.totalText}`
     : t('ride.addPaymentMethod');
-  const onPrimary = () => {
+  const onPrimary = async () => {
     if (payment.decision) {
-      void confirmBoarding();
+      // Plată reușită: Portofelul deschide singur biletul cu QR.
+      if (await confirmBoarding()) {
+        useWalletStore.getState().setTicketRequested(true);
+        router.push('/(tabs)/wallet');
+      }
       return;
     }
     deferDetection();
@@ -95,26 +100,7 @@ export function BoardingPromptModal() {
             </View>
           </View>
 
-          {/* Action buttons */}
-          <Pressable
-            testID="btn-confirm-boarding"
-            accessibilityRole="button"
-            accessibilityLabel={payButtonText}
-            onPress={onPrimary}
-            style={({ pressed }) => [styles.payBtn, { backgroundColor: colors.primary }, pressed && { opacity: 0.88 }]}
-          >
-            <Text style={[styles.payBtnText, { color: colors.onPrimary }]}>{payButtonText}</Text>
-          </Pressable>
-
-          <Pressable
-            testID="btn-ignore-boarding"
-            accessibilityRole="button"
-            accessibilityLabel={t('ride.cancel')}
-            onPress={dismissDetection}
-            style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.6 }]}
-          >
-            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{t('ride.cancel')}</Text>
-          </Pressable>
+          <BoardingActions payButtonText={payButtonText} onPrimary={onPrimary} onCancel={dismissDetection} />
         </View>
       </View>
     </Modal>
@@ -134,8 +120,4 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 13.5 },
   summaryValue: { fontSize: 14.5, fontWeight: fontWeights.bold },
   sourceValue: { flexShrink: 1, marginLeft: 12, textAlign: 'right' },
-  payBtn: { height: 50, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  payBtnText: { fontSize: 16, fontWeight: fontWeights.bold },
-  cancelBtn: { alignItems: 'center', justifyContent: 'center', paddingVertical: 14 },
-  cancelText: { fontSize: 14.5, fontWeight: fontWeights.bold },
 });

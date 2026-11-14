@@ -85,6 +85,19 @@ export function etaToStationMin(marker: BusMarker, station: Station): number | n
   return km === null ? null : Math.max(0, Math.round((km / speedOf(marker)) * 60));
 }
 
+/**
+ * Vehiculele care vin spre stație, ca în Google Maps: orice mod (autobuz, troleibuz, tramvai) de pe liniile ei,
+ * doar cele care încă n-au ajuns la ea (pe traseul GTFS; cele trecute sau din sens opus nu), cel mai apropiat primul.
+ */
+export function approachingAt(markers: BusMarker[], station: Station): BusMarker[] {
+  const served = new Set(station.lines);
+  return markers
+    .map((marker) => ({ marker, eta: served.has(marker.bus.line) ? etaToStationMin(marker, station) : null }))
+    .filter((x): x is { marker: BusMarker; eta: number } => x.eta !== null && x.eta <= MAX_ETA_MIN)
+    .sort((a, b) => a.eta - b.eta)
+    .map((x) => x.marker);
+}
+
 export function estimateArrivals(station: Station, markers: BusMarker[]): Arrival[] {
   const served = new Set(station.lines);
   const byLine = new Map<string, { marker: BusMarker; km: number }>();

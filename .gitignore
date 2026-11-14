@@ -15,5 +15,6 @@ web-build/
 .vscode/
 *.png
 !assets/*.png
+!src/assets/*.png
 !logo.png
 scratch/

@@ -1,0 +1,146 @@
+import { StyleSheet } from 'react-native';
+import { fontSizes, fontWeights, radius, spacing } from '../../../../core/theme';
+
+/**
+ * Official inspection screen: a fixed green palette, identical in light and
+ * dark mode, so an inspector always sees the same validated-ticket screen.
+ */
+export const styles = StyleSheet.create({
+  detailValueOk: { color: '#047857' },
+  container: {
+    flex: 1,
+    backgroundColor: '#059669',
+    paddingTop: 16,
+    paddingBottom: 28,
+    paddingHorizontal: spacing.lg,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  header: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  liveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#34D399',
+  },
+  liveText: {
+    color: '#FFFFFF',
+    fontWeight: fontWeights.bold,
+    fontSize: fontSizes.xs,
+    letterSpacing: 0.5,
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeContainer: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  iconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  statusTitle: {
+    fontSize: fontSizes.xl,
+    fontWeight: fontWeights.bold,
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  statusSubtitle: {
+    fontSize: fontSizes.sm,
+    color: 'rgba(255, 255, 255, 0.88)',
+  },
+  qrCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+  },
+  qrWrapper: {
+    padding: 8,
+  },
+  timerText: {
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+    color: '#111827',
+  },
+  securityBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+  },
+  securityIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#059669',
+  },
+  securityText: {
+    fontSize: fontSizes.xs,
+    color: '#047857',
+    fontWeight: fontWeights.medium,
+  },
+  detailsCard: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: 6,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  detailLabel: {
+    fontSize: fontSizes.sm,
+    color: '#4B5563',
+  },
+  detailValue: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+    color: '#111827',
+  },
+  dismissButton: {
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    paddingVertical: 14,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  dismissText: {
+    color: '#FFFFFF',
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+  },
+});

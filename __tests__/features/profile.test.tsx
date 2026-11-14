@@ -1,0 +1,57 @@
+import { fireEvent, render } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement, ReactNode } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import ProfileRoute from '../../app/profile';
+import { useThemeStore } from '../../src/core/theme/themeStore';
+import { useAuthStore } from '../../src/features/auth';
+
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), back: jest.fn() }) }));
+jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(async () => null),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+}));
+
+function renderWithClient(ui: ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <SafeAreaProvider
+      initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } }}
+    >
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    </SafeAreaProvider>
+  );
+  return render(ui, { wrapper: Wrapper });
+}
+
+describe('profile screen', () => {
+  it('shows the pass holder and preference groups', async () => {
+    const screen = renderWithClient(<ProfileRoute />);
+    expect(await screen.findByText('Ion Popescu')).toBeTruthy();
+    expect(await screen.findByText('Mod întunecat')).toBeTruthy();
+    expect(await screen.findByText('Nu ești conectat')).toBeTruthy();
+  });
+
+  it('offers sign in for guests and logout for signed-in users', async () => {
+    const guest = renderWithClient(<ProfileRoute />);
+    expect((await guest.findAllByText('Conectează-te')).length).toBeGreaterThan(0);
+    guest.unmount();
+    useAuthStore.setState({ user: { id: 'u1', name: 'Maria Ionescu', email: 'maria@exemplu.ro' } });
+    const signedIn = renderWithClient(<ProfileRoute />);
+    expect(await signedIn.findByText('Deconectare')).toBeTruthy();
+    expect(await signedIn.findByText('maria@exemplu.ro')).toBeTruthy();
+    fireEvent.press(signedIn.getByText('Deconectare'));
+    expect(useAuthStore.getState().user).toBeNull();
+  });
+
+  it('dark mode toggle switches the theme preference', async () => {
+    const screen = renderWithClient(<ProfileRoute />);
+    const switches = await screen.findAllByRole('switch');
+    expect(useThemeStore.getState().preference).toBe('system');
+    fireEvent.press(switches[switches.length - 1]);
+    expect(useThemeStore.getState().preference).toBe('dark');
+    useThemeStore.getState().setPreference('system');
+  });
+});

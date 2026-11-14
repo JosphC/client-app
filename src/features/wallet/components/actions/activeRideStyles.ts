@@ -1,0 +1,68 @@
+import { StyleSheet } from 'react-native';
+import { fontWeights } from '../../../../core/theme';
+
+export const styles = StyleSheet.create({
+  card: {
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    gap: 14,
+    overflow: 'hidden',
+  },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  // Status chip, same as the pass panel ("● Activ").
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  activeDot: { width: 7, height: 7, borderRadius: 3.5 },
+  chipText: { fontSize: 13, fontWeight: fontWeights.semiBold },
+  passengersRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  passengersText: { fontSize: 13.5 },
+  transitRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  transitTexts: { flex: 1, gap: 2 },
+  destinationText: { fontSize: 16, fontWeight: fontWeights.bold },
+  fareText: { fontSize: 13 },
+  countdownRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  countdownContainer: { flexDirection: 'row', alignItems: 'baseline' },
+  bigMinutes: { fontSize: 28, fontWeight: fontWeights.bold, letterSpacing: -0.5 },
+  ramaseText: { fontSize: 13.5 },
+  expiraText: { fontSize: 13.5, fontWeight: fontWeights.medium },
+  validationRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  validationText: { fontSize: 13.5, flex: 1 },
+  perforationContainer: {
+    height: 22,
+    justifyContent: 'center',
+    marginHorizontal: -18,
+    position: 'relative',
+  },
+  dashedLine: {
+    height: 1,
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    marginHorizontal: 16,
+  },
+  notchWrapperLeft: {
+    position: 'absolute',
+    left: -1,
+    top: 0,
+    width: 12,
+    height: 22,
+    overflow: 'hidden',
+  },
+  notchWrapperRight: {
+    position: 'absolute',
+    right: -1,
+    top: 0,
+    width: 12,
+    height: 22,
+    overflow: 'hidden',
+  },
+  notchCircle: {
+    position: 'absolute',
+    top: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  captionText: { fontSize: 12.5, textAlign: 'center', marginTop: -4 },
+});

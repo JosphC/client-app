@@ -32,9 +32,9 @@ export const seedCharges: Charge[] = [
 ];
 
 export const seedBuses: Bus[] = [
-  { id: 'bus-17a', line: '17', destination: 'Centru', crowd: 2, delayMin: 4, delayReason: 'Trafic' },
-  { id: 'bus-11a', line: '11', destination: 'Gara de Nord', crowd: 1, delayMin: 0, delayReason: null },
-  { id: 'bus-14a', line: '14', destination: 'Spitalul Municipal', crowd: 3, delayMin: 0, delayReason: null },
+  { id: 'bus-17a', line: '17', destination: 'Centru', crowd: 2, delayMin: 4, delayReason: 'Trafic', headcount: 34 },
+  { id: 'bus-11a', line: '11', destination: 'Gara de Nord', crowd: 1, delayMin: 0, delayReason: null, headcount: 9 },
+  { id: 'bus-14a', line: '14', destination: 'Spitalul Municipal', crowd: 3, delayMin: 0, delayReason: null, headcount: 58 },
 ];
 
 export const seedPositions: BusPosition[] = [

@@ -21,6 +21,12 @@ function toLineString(coords: LatLng[]): LineString {
   return { type: 'LineString', coordinates: coords.map((p) => [p.lng, p.lat]) };
 }
 
+/**
+ * Rutele se montează după autobuze, deci fără ancoră ar fi desenate deasupra lor.
+ * Le inserăm sub cel mai de jos strat al autobuzelor (vezi BusShapeSource).
+ */
+const BELOW_BUSES = 'bus-clusters';
+
 /** Screen distance between walking dots, like Google Maps. */
 const DOT_SPACING_PX = 12;
 
@@ -45,6 +51,7 @@ function WalkDots({ id, path, color, zoom }: { id: string; path: LatLng[]; color
     <ShapeSource id={id} shape={shape}>
       <CircleLayer
         id={`${id}-dots`}
+        belowLayerID={BELOW_BUSES}
         style={{ circleColor: color, circleRadius: 4, circleStrokeColor: '#FFFFFF', circleStrokeWidth: 1 }}
       />
     </ShapeSource>
@@ -73,12 +80,14 @@ function TransitStops({ seg, color }: { seg: MapRouteSegment; color: string }) {
     <ShapeSource id={`stops-${seg.id}`} shape={shape}>
       <CircleLayer
         id={`stops-${seg.id}-via`}
+        belowLayerID={BELOW_BUSES}
         minZoomLevel={STOP_DOTS_MIN_ZOOM}
         filter={['==', ['get', 'kind'], 'via']}
         style={{ circleColor: '#FFFFFF', circleRadius: 3.5, circleStrokeColor: color, circleStrokeWidth: 1.5 }}
       />
       <CircleLayer
         id={`stops-${seg.id}-end`}
+        belowLayerID={BELOW_BUSES}
         filter={['==', ['get', 'kind'], 'end']}
         style={{ circleColor: '#FFFFFF', circleRadius: 6.5, circleStrokeColor: '#202124', circleStrokeWidth: 2.5 }}
       />
@@ -119,10 +128,12 @@ export function RoutePolylines({ ready, routeSegments, walkPath, destWalkPath, p
               <ShapeSource id={`route-${seg.id}`} shape={shape}>
                 <LineLayer
                   id={`route-${seg.id}-casing`}
+                  belowLayerID={BELOW_BUSES}
                   style={{ lineColor: '#FFFFFF', lineWidth: 10, lineCap: 'round', lineJoin: 'round' }}
                 />
                 <LineLayer
                   id={`route-${seg.id}-core`}
+                  belowLayerID={BELOW_BUSES}
                   style={{ lineColor: color, lineWidth: 6, lineCap: 'round', lineJoin: 'round' }}
                 />
               </ShapeSource>

@@ -1,6 +1,6 @@
 import { parseStptEnvelope } from '../../src/services/repositories/real/stpt/schemas';
 import { mapVehicleToBus, mapVehicleToPosition } from '../../src/services/repositories/real/stpt/mapper';
-import { createStptBusRepo } from '../../src/services/repositories/real/busRepo';
+import { createStptBusRepo, STPT_TTL_MS } from '../../src/services/repositories/real/busRepo';
 
 const vehicle = {
   id: '1805',
@@ -47,6 +47,30 @@ describe('stpt adapter (faza 5)', () => {
       expect(buses[0].id).toBe(positions[0].busId);
     } finally {
       globalThis.fetch = realFetch;
+    }
+  });
+
+  it('reuses the STPT snapshot within the TTL and refreshes it in the background after', async () => {
+    const realFetch = globalThis.fetch;
+    const realNow = Date.now;
+    let now = 1_000_000;
+    Date.now = () => now;
+    const envelope = { success: true, data: { vehicles: [vehicle], age_seconds: 5, is_stale: false } };
+    const spy = jest.fn().mockResolvedValue({ ok: true, json: async () => envelope });
+    globalThis.fetch = spy as unknown as typeof fetch;
+    try {
+      const repo = createStptBusRepo();
+      await repo.getPositions();
+      now += STPT_TTL_MS - 1;
+      await repo.getPositions();
+      expect(spy).toHaveBeenCalledTimes(1);
+      now += 2;
+      // Stale: answers at once with the cached snapshot, refetches without waiting.
+      await expect(repo.getPositions()).resolves.toHaveLength(1);
+      expect(spy).toHaveBeenCalledTimes(2);
+    } finally {
+      globalThis.fetch = realFetch;
+      Date.now = realNow;
     }
   });
 

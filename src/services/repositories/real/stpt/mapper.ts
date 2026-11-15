@@ -7,7 +7,7 @@ import type { StptVehicle } from './schemas';
  * "Acum la {stop}" instead of an ETA.
  */
 export function mapVehicleToBus(v: StptVehicle): Bus {
-  return { id: v.id, line: v.route, destination: v.headsign, crowd: 1, delayMin: 0, delayReason: null };
+  return { id: v.id, line: v.route, destination: v.headsign, crowd: 1, delayMin: 0, delayReason: null, headcount: null };
 }
 
 export function mapVehicleToPosition(v: StptVehicle): BusPosition {

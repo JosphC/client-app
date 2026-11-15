@@ -10,6 +10,8 @@ export const busSchema = z.object({
   crowd: crowdLevelSchema,
   delayMin: z.number().int().min(0),
   delayReason: z.string().nullable(),
+  /** Persoane numărate în vehicul acum (camera de bord). null/absent = necunoscut. */
+  headcount: z.number().int().min(0).nullable().optional(),
 });
 export type Bus = z.infer<typeof busSchema>;
 

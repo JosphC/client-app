@@ -14,6 +14,8 @@ const raw = {
   SIGHTINGS_URL: process.env.EXPO_PUBLIC_SIGHTINGS_URL,
   TEST_PAYMENTS: process.env.EXPO_PUBLIC_TEST_PAYMENTS,
   TEST_ID_TOKEN: process.env.EXPO_PUBLIC_TEST_ID_TOKEN,
+  DISPLAY_TOKEN: process.env.EXPO_PUBLIC_DISPLAY_TOKEN,
+  SERVER_BUSES: process.env.EXPO_PUBLIC_SERVER_BUSES,
 };
 
 function readBool(value: string | undefined, fallback: boolean): boolean {
@@ -56,4 +58,11 @@ export const env = {
   useTestPayments: readBool(raw.TEST_PAYMENTS, useMocks),
   /** Doar server de test: `idToken` fix (ex. `test:alice`) pentru Google/Apple până există SDK-ul real. */
   testIdToken: raw.TEST_ID_TOKEN ?? null,
+  /**
+   * Doar test/demo: `DISPLAY_TOKEN` al serverului, ca harta să arate autobuzele de test ale serverului
+   * (poziție + persoane numărate de cameră). Ajunge în APK — nu-l pune într-un build public.
+   */
+  displayToken: raw.DISPLAY_TOKEN || null,
+  /** Autobuzele serverului arătate pe hartă, `bus_id:linie` separate prin virgulă. */
+  serverBuses: raw.SERVER_BUSES ?? '101:E2',
 } as const;

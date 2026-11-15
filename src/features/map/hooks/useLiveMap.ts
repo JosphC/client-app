@@ -3,14 +3,20 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import * as Location from 'expo-location';
 import { useCallback, useMemo, useState } from 'react';
 import type { Bus, BusPosition } from '../../../services/api/schemas/bus';
+import { env } from '../../../core/config/env';
 import { getRepositories } from '../../../services/providers';
+import { parseServerBuses } from '../../../services/repositories/real/serverBuses';
 import { approachingAt, estimateArrivals, haversineKm, nearestStation, CITY_CENTER, type Arrival } from '../arrivals';
 import { detectDelays, type DelayInfo } from '../delays';
 import { loadStations, type Station } from '../stations';
 
 const repos = getRepositories();
-/** STPT publishes fresh positions ~every 20s; poll slower to stay clear of slow cycles. */
-const POLL_MS = 30_000;
+/**
+ * STPT publishes fresh positions ~every 20s; poll slower to stay clear of slow cycles.
+ * With the EchoPass server's test buses on (beacon GPS every ~2s) poll fast: the bus repo
+ * caches STPT, so only the server is asked every cycle.
+ */
+const POLL_MS = env.displayToken && parseServerBuses(env.serverBuses).length > 0 ? 3_000 : 30_000;
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let pollCycle: Promise<unknown> | null = null;

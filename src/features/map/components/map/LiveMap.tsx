@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Camera, MapView, UserLocation, type CameraRef } from '@maplibre/maplibre-react-native';
 import { useTheme } from '../../../../core/theme/useTheme';
@@ -60,12 +60,14 @@ interface LiveMapProps {
   userCoords?: LatLng | null;
   routeEdgePadding?: { top: number; right: number; bottom: number; left: number };
   mapPadding?: { top: number; right: number; bottom: number; left: number };
+  /** Overlay-uri ancorate pe hartă (ex. panoul autobuzului), randate în MapView. */
+  children?: ReactNode;
 }
 
 export function LiveMap({
   markers, station, highlightStation, extraStations, routeSegments, routeFitCoords, walkPath, destWalkPath,
   originPin, destPin, selectedId, followed, located = true, onSelect, onLocated, onMapPress, onUserMove,
-  onStationPress, centerTrigger, userCoords, routeEdgePadding, mapPadding
+  onStationPress, centerTrigger, userCoords, routeEdgePadding, mapPadding, children
 }: LiveMapProps) {
   const cameraRef = useRef<CameraRef | null>(null);
   const { colors, isDark } = useTheme();
@@ -148,6 +150,7 @@ export function LiveMap({
       <PlacePin id="dest-pin" pin={destPin} color="#DC2626" />
       {station && !onStationPress ? <StationPin station={station} /> : null}
       {extraStations && !routeSegments?.length ? extraStations.map((s) => <StationPin key={s.id} station={s} />) : null}
+      {children}
     </MapView>
   );
 }
